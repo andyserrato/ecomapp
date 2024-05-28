@@ -4,7 +4,6 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import net.minidev.json.JSONArray;
 import org.dynamics360.org.ecomapp.dtos.ProductDto;
-import org.dynamics360.org.ecomapp.persistence.entities.Product;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

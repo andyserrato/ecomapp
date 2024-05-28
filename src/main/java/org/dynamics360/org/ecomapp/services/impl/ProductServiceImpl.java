@@ -14,7 +14,7 @@ import java.util.Optional;
 @Service
 public class ProductServiceImpl implements ProductService {
 
-    private ProductRepository productRepository;
+    private final ProductRepository productRepository;
 
     public ProductServiceImpl(ProductRepository productRepository) {
         this.productRepository = productRepository;
@@ -24,11 +24,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductDto findProductById(Long productId) {
         Optional<Product> product = productRepository.findById(productId);
 
-        if (product.isPresent()) {
-            return ProductMapper.toDto(product.get());
-        } else {
-            return null;
-        }
+        return product.map(ProductMapper::toDto).orElse(null);
     }
 
     @Override
