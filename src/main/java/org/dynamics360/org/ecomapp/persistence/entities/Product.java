@@ -3,12 +3,19 @@ package org.dynamics360.org.ecomapp.persistence.entities;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
-@Entity
+/**
+ * Product is an entity that represents a product in the e-commerce system.
+ * It contains information about the product, such as its ID, name, description, price, and quantity.
+ *
+ * @author andyserrato
+ */
+ @Entity
 public class Product {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column
     private String name;
@@ -16,6 +23,16 @@ public class Product {
     private String description;
     @Column
     private Double price;
+
+    public Product() {
+    }
+
+    public Product(Long id, String name, String description, Double price) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.price = price;
+    }
 
     public void setId(Long id) {
         this.id = id;
