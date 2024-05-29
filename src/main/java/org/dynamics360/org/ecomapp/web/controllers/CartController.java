@@ -5,27 +5,24 @@ import org.dynamics360.org.ecomapp.dtos.CartEntryDto;
 import org.dynamics360.org.ecomapp.exceptions.CartNotFoundException;
 import org.dynamics360.org.ecomapp.exceptions.ProductNotFoundException;
 import org.dynamics360.org.ecomapp.services.CartService;
-import org.dynamics360.org.ecomapp.services.ProductService;
-import org.springframework.data.domain.jaxb.SpringDataJaxb;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/cart")
+@RequestMapping("/carts")
 public class CartController {
 
     private final CartService cartService;
-    private final ProductService productService;
 
-    public CartController(CartService cartService, ProductService productService) {
+    public CartController(CartService cartService) {
         this.cartService = cartService;
-        this.productService = productService;
     }
 
     @PostMapping
@@ -50,7 +47,7 @@ public class CartController {
      * @param cartId
      * @return
      */
-    @PostMapping("/entries/{cartId}")
+    @PostMapping("/{cartId}/entries")
     public ResponseEntity<CartDto> addToCart(@RequestBody CartEntryDto cartEntryDto, @PathVariable String cartId) throws ProductNotFoundException, CartNotFoundException {
         return ResponseEntity.ok(cartService.addToCart(cartEntryDto.product().id(), cartId, cartEntryDto.quantity()));
     }
@@ -58,17 +55,22 @@ public class CartController {
     /**
      * Remove a product from the cart
      */
-    @DeleteMapping("/entries/{cartId}")
-    public ResponseEntity<Void> removeAProductFromCart(@RequestBody CartEntryDto cartEntryDto, @PathVariable String cartId) throws ProductNotFoundException, CartNotFoundException {
-        if (cartService.addToCart(cartEntryDto.product().id(), cartId, cartEntryDto.quantity()) != null) {
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @PutMapping("/{cartId}/entries")
+    public ResponseEntity<Void> removeAProductFromCart(@RequestBody CartEntryDto cartEntryDto, @PathVariable String cartId) throws CartNotFoundException {
+        cartService.removeProductFromCart(cartEntryDto.product().id(), Long.valueOf(cartId));
+        return ResponseEntity.noContent().build();
     }
 
     /**
      * Empty cart
      */
+    @DeleteMapping("/{cartId}/entries")
+    public ResponseEntity<Void> emptyTheCart(@PathVariable String cartId) throws CartNotFoundException {
+        if (cartService.emptyCart(Long.valueOf(cartId)) != null) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
 }

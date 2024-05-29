@@ -10,4 +10,8 @@ public interface CartService {
     CartDto getCartById(Long cartId);
 
     CartDto addToCart(Long productId, String cartId, Long quantity) throws CartNotFoundException, ProductNotFoundException;
+
+    CartDto emptyCart(Long cartId) throws CartNotFoundException;
+
+    void removeProductFromCart(Long productId, Long cartId) throws CartNotFoundException;
 }

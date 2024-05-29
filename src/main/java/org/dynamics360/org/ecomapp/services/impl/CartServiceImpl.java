@@ -13,11 +13,14 @@ import org.dynamics360.org.ecomapp.persistence.repositories.ProductRepository;
 import org.dynamics360.org.ecomapp.services.CartService;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 @Service
 public class CartServiceImpl implements CartService {
 
+    public static final String CART_NOT_FOUND = "Cart not found";
+    public static final String PRODUCT_NOT_FOUND = "Product not found";
     private final CartRepository cartRepository;
     private final CartEntryRepository cartEntryRepository;
     private final ProductRepository productRepository;
@@ -42,10 +45,10 @@ public class CartServiceImpl implements CartService {
     @Override
     public CartDto addToCart(Long productId, String cartId, Long quantity) throws CartNotFoundException, ProductNotFoundException {
         Cart cart = cartRepository.findById(Long.valueOf(cartId))
-                .orElseThrow(() -> new CartNotFoundException("Cart not found"));
+                .orElseThrow(() -> new CartNotFoundException(CART_NOT_FOUND));
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+                .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
 
         // TODO Search if product already exists in cart
         // TODO If product already exists change the entry
@@ -56,15 +59,40 @@ public class CartServiceImpl implements CartService {
         cart = addCartEntryToCart(cart, cartEntry);
 
         // calculate the cart
-        cart = calculateCart(quantity, cart);
+        cart = calculateCart(cart);
 
         return Optional.of(cart).map(CartMapper::toDto).orElse(null);
     }
 
-    private Cart calculateCart(Long quantity, Cart cart) {
+    @Override
+    public CartDto emptyCart(Long cartId) throws CartNotFoundException {
+        Cart cart = cartRepository.findById(cartId)
+                .orElseThrow(() -> new CartNotFoundException(CART_NOT_FOUND));
+
+        cart.setTotalPrice(0.0d);
+        cart.setCartEntries(new ArrayList<>());
+        return Optional.of(cartRepository.save(cart)).map(CartMapper::toDto).orElse(null);
+    }
+
+    @Override
+    public void removeProductFromCart(Long productId, Long cartId) throws CartNotFoundException {
+        Cart cart = cartRepository.findById(cartId)
+                .orElseThrow(() -> new CartNotFoundException(CART_NOT_FOUND));
+
+        for (var entry : cart.getCartEntries()) {
+            if(entry.getProduct().getId().equals(productId)) {
+                cart.getCartEntries().remove(entry);
+                calculateCart(cart);
+                cartEntryRepository.delete(entry);
+                break;
+            }
+        }
+    }
+
+    private Cart calculateCart(Cart cart) {
         var totalCartPrice = 0.0d;
         for (CartEntry entry : cart.getCartEntries()) {
-             totalCartPrice += entry.getTotalPrice() * quantity;
+             totalCartPrice += entry.getTotalPrice();
         }
         cart.setTotalPrice(totalCartPrice);
 
