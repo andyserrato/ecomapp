@@ -115,7 +115,7 @@ public class ProductController {
      *         or HTTP status 404 (Not Found) if the product does not exist
      */
     @DeleteMapping("/{productId}")
-    public ResponseEntity<Void> putProduct(@PathVariable String productId) {
+    public ResponseEntity<Void> deleteProduct(@PathVariable String productId) {
         if (productService.existsProductById(Long.valueOf(productId))) {
             productService.deleteProduct(Long.valueOf(productId));
             return ResponseEntity.noContent().build();
