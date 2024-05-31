@@ -10,10 +10,22 @@ public class CartEntryMapper {
 
     public static CartEntryDto toDto(CartEntry cartEntry) {
         return new CartEntryDto(
+                cartEntry.getId(),
                 ProductMapper.toDto(cartEntry.getProduct()),
                 cartEntry.getQuantity(),
                 cartEntry.getBasePrice(),
                 cartEntry.getTotalPrice()
+        );
+    }
+
+    public static CartEntry toEntity(CartEntryDto cartEntryDto) {
+        return new CartEntry(
+                cartEntryDto.id(),
+                null,
+                ProductMapper.toEntity(cartEntryDto.product()),
+                cartEntryDto.quantity(),
+                cartEntryDto.basePrice(),
+                cartEntryDto.totalPrice()
         );
     }
 }

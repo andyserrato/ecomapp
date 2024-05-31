@@ -1,6 +1,8 @@
 package org.dynamics360.org.ecomapp.services.impl;
 
 import org.dynamics360.org.ecomapp.dtos.CartDto;
+import org.dynamics360.org.ecomapp.dtos.CartEntryDto;
+import org.dynamics360.org.ecomapp.exceptions.CartEntryNotFoundException;
 import org.dynamics360.org.ecomapp.exceptions.CartNotFoundException;
 import org.dynamics360.org.ecomapp.exceptions.ProductNotFoundException;
 import org.dynamics360.org.ecomapp.mappers.CartMapper;
@@ -21,6 +23,7 @@ public class CartServiceImpl implements CartService {
 
     public static final String CART_NOT_FOUND = "Cart not found";
     public static final String PRODUCT_NOT_FOUND = "Product not found";
+    public static final String CART_ENTRY_NOT_FOUND = "Cart entry not found";
     private final CartRepository cartRepository;
     private final CartEntryRepository cartEntryRepository;
     private final ProductRepository productRepository;
@@ -43,9 +46,8 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public CartDto addToCart(Long productId, String cartId, Long quantity) throws CartNotFoundException, ProductNotFoundException {
-        Cart cart = cartRepository.findById(Long.valueOf(cartId))
-                .orElseThrow(() -> new CartNotFoundException(CART_NOT_FOUND));
+    public CartDto addToCart(Long productId, Long cartId, Long quantity) throws CartNotFoundException, ProductNotFoundException {
+        Cart cart = getCartByIdOrThrowException(cartId);
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
@@ -64,10 +66,19 @@ public class CartServiceImpl implements CartService {
         return Optional.of(cart).map(CartMapper::toDto).orElse(null);
     }
 
+    private Cart getCartByIdOrThrowException(Long cartId) throws CartNotFoundException {
+        return cartRepository.findById(cartId)
+                .orElseThrow(() -> new CartNotFoundException(CART_NOT_FOUND));
+    }
+
+    private CartEntry getCartEntryByIdOrThrowException(Long cartEntryId) throws CartEntryNotFoundException {
+        return cartEntryRepository.findById(cartEntryId)
+                .orElseThrow(() -> new CartEntryNotFoundException(CART_ENTRY_NOT_FOUND));
+    }
+
     @Override
     public CartDto emptyCart(Long cartId) throws CartNotFoundException {
-        Cart cart = cartRepository.findById(cartId)
-                .orElseThrow(() -> new CartNotFoundException(CART_NOT_FOUND));
+        Cart cart = getCartByIdOrThrowException(cartId);
 
         cart.setTotalPrice(0.0d);
         cart.setCartEntries(new ArrayList<>());
@@ -76,21 +87,50 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public void removeProductFromCart(Long productId, Long cartId) throws CartNotFoundException {
-        Cart cart = cartRepository.findById(cartId)
-                .orElseThrow(() -> new CartNotFoundException(CART_NOT_FOUND));
+        Cart cart = getCartByIdOrThrowException(cartId);
 
         for (var entry : cart.getCartEntries()) {
             if(entry.getProduct().getId().equals(productId)) {
                 cart.getCartEntries().remove(entry);
-                calculateCart(cart);
                 cartEntryRepository.delete(entry);
+                calculateCart(cart);
                 break;
             }
         }
     }
 
+    @Override
+    public void removeCart(Long cartId) {
+        cartRepository.deleteById(cartId);
+    }
+
+    @Override
+    public void removeCartEntry(Long entryId, Long cartId) throws CartNotFoundException {
+        cartEntryRepository.deleteById(entryId);
+        calculateCart(getCartByIdOrThrowException(cartId));
+    }
+
+    @Override
+    public void updateCartEntry(CartEntryDto cartEntryDto, Long cartId) throws CartNotFoundException, CartEntryNotFoundException {
+        CartEntry cartEntry = getCartEntryByIdOrThrowException(cartEntryDto.id());
+        cartEntry.setQuantity(cartEntryDto.quantity());
+        cartEntryRepository.save(cartEntry);
+        Cart cart = getCartByIdOrThrowException(cartId);
+        calculateCart(cart);
+    }
+
+    private void calculateCartEntries(Cart cart) {
+        for (var entry : cart.getCartEntries()) {
+            entry.setTotalPrice(entry.getTotalPrice() * entry.getQuantity());
+            cartEntryRepository.save(entry);
+        }
+    }
+
     private Cart calculateCart(Cart cart) {
         var totalCartPrice = 0.0d;
+
+        calculateCartEntries(cart);
+
         for (CartEntry entry : cart.getCartEntries()) {
              totalCartPrice += entry.getTotalPrice();
         }
