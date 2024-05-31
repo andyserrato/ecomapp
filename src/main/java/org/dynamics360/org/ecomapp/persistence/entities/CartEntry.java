@@ -30,6 +30,15 @@ public class CartEntry {
     public CartEntry() {
     }
 
+    public CartEntry(Long id, Cart cart, Product product, Long quantity, Double basePrice, Double totalPrice) {
+        this.id = id;
+        this.cart = cart;
+        this.product = product;
+        this.quantity = quantity;
+        this.basePrice = basePrice;
+        this.totalPrice = totalPrice;
+    }
+
     public Long getId() {
         return id;
     }
